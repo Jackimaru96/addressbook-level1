@@ -985,11 +985,7 @@ public class AddressBook {
      * @return name argument
      */
     private static String extractNameFromPersonString(String encoded) {
-        final int indexOfPhonePrefix = encoded.indexOf(PERSON_DATA_PREFIX_PHONE);
-        final int indexOfEmailPrefix = encoded.indexOf(PERSON_DATA_PREFIX_EMAIL);
-        // name is leading substring up to first data prefix symbol
-        int indexOfFirstPrefix = Math.min(indexOfEmailPrefix, indexOfPhonePrefix);
-        return encoded.substring(0, indexOfFirstPrefix).trim();
+        return extractDataFromPersonString(encoded, PERSON_DATA_INDEX_NAME);
     }
 
     /**
@@ -999,20 +995,7 @@ public class AddressBook {
      * @return phone number argument WITHOUT prefix
      */
     private static String extractPhoneFromPersonString(String encoded) {
-        final int indexOfPhonePrefix = encoded.indexOf(PERSON_DATA_PREFIX_PHONE);
-        final int indexOfEmailPrefix = encoded.indexOf(PERSON_DATA_PREFIX_EMAIL);
-
-        // phone is last arg, target is from prefix to end of string
-        if (indexOfPhonePrefix > indexOfEmailPrefix) {
-            return removePrefixSign(encoded.substring(indexOfPhonePrefix, encoded.length()).trim(),
-                    PERSON_DATA_PREFIX_PHONE);
-
-        // phone is middle arg, target is from own prefix to next prefix
-        } else {
-            return removePrefixSign(
-                    encoded.substring(indexOfPhonePrefix, indexOfEmailPrefix).trim(),
-                    PERSON_DATA_PREFIX_PHONE);
-        }
+        return extractDataFromPersonString(encoded, PERSON_DATA_INDEX_PHONE);
     }
 
     /**
@@ -1022,19 +1005,46 @@ public class AddressBook {
      * @return email argument WITHOUT prefix
      */
     private static String extractEmailFromPersonString(String encoded) {
-        final int indexOfPhonePrefix = encoded.indexOf(PERSON_DATA_PREFIX_PHONE);
-        final int indexOfEmailPrefix = encoded.indexOf(PERSON_DATA_PREFIX_EMAIL);
+        return extractDataFromPersonString(encoded, PERSON_DATA_INDEX_EMAIL);
+    }
 
-        // email is last arg, target is from prefix to end of string
-        if (indexOfEmailPrefix > indexOfPhonePrefix) {
-            return removePrefixSign(encoded.substring(indexOfEmailPrefix, encoded.length()).trim(),
-                    PERSON_DATA_PREFIX_EMAIL);
+    /**
+     * Extracts substring representing required data from person string representation
+     *
+     * @param encoded person string represetation
+     * @param dataRequired integer representing data required
+     * @return required data WITHOUT prefix
+     */
+    private static String extractDataFromPersonString(String encoded, int dataRequired) {
+        final String requiredPrefix;
+        final String unrequiredPrefix;
 
-        // email is middle arg, target is from own prefix to next prefix
+        // initialise prefix variables
+        if (dataRequired == PERSON_DATA_INDEX_EMAIL) {
+            requiredPrefix = PERSON_DATA_PREFIX_EMAIL;
+            unrequiredPrefix = PERSON_DATA_PREFIX_PHONE;
         } else {
+            requiredPrefix = PERSON_DATA_PREFIX_PHONE;
+            unrequiredPrefix = PERSON_DATA_PREFIX_EMAIL;
+        }
+
+        final int indexOfRequiredPrefix = encoded.indexOf(requiredPrefix);
+        final int indexOfUnrequiredPrefix = encoded.indexOf(unrequiredPrefix);
+
+        // If data required is name
+        if (dataRequired == PERSON_DATA_INDEX_NAME) {
+            int indexOfFirstPrefix = Math.min(indexOfRequiredPrefix, indexOfUnrequiredPrefix);
+            return encoded.substring(0, indexOfFirstPrefix).trim();
+        }
+
+        if (indexOfRequiredPrefix > indexOfUnrequiredPrefix) {
+            return removePrefixSign(encoded.substring(indexOfRequiredPrefix, encoded.length()).trim(),
+                    requiredPrefix);
+        }
+        else {
             return removePrefixSign(
-                    encoded.substring(indexOfEmailPrefix, indexOfPhonePrefix).trim(),
-                    PERSON_DATA_PREFIX_EMAIL);
+                    encoded.substring(indexOfRequiredPrefix, indexOfUnrequiredPrefix).trim(),
+                    requiredPrefix);
         }
     }
 
